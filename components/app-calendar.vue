@@ -1,4 +1,5 @@
 <script setup>
+	import * as Realm from "realm-web";
 	import { ref } from "vue";
 	import { ScheduleXCalendar } from "@schedule-x/vue";
 	import {
@@ -18,7 +19,7 @@
 
 	const modalIsOpen = ref(false);
 
-	const { getAllBookings } = useRealmApp();
+	const { bookingCol, getAllBookings } = useRealmApp();
 
 	const calendarApp = createCalendar({
 		selectedDate: "2024-03-19",
@@ -70,36 +71,35 @@
 	const eventTitle = ref("");
 	const eventStart = ref("");
 	const eventEnd = ref("");
+	const eventPeople = ref("");
 	const eventDescription = ref("");
-	const eventLocation = ref("");
-	const eventId = ref(calendarApp.events.getAll().length);
 
-	const addEvent = () => {
-		let data = {
-			id: eventId.value + 1,
-			title: eventTitle.value,
-			start: eventStart.value,
-			end: eventEnd.value,
-			description: eventDescription.value,
-			location: eventLocation.value,
-		};
-		console.log(data);
-		calendarApp.events.add(data);
-		console.log(calendarApp.events.getAll());
-		eventTitle.value = "";
-		eventStart.value = "";
-		eventEnd.value = "";
-		eventDescription.value = "";
-		eventLocation.value = "";
-		eventId.value = calendarApp.events.getAll().length;
-	};
+	const addEventHandler = async () => {
+		try {
+			const uuid = Realm.BSON.ObjectID();
 
-	const deleteEvent = (id) => {
-		calendarApp.events.remove(id);
-	};
+			const data = {
+				_id: uuid,
+				id: uuid.toString(),
+				title: eventTitle.value,
+				schedule_date: new Date(eventStart.value),
+				start: toEventDate(eventStart.value),
+				end: toEventDate(eventEnd.value),
+				description: eventDescription.value,
+				time_slot_start: getOnlyTime(eventStart.value),
+				time_slot_end: getOnlyTime(eventEnd.value),
+				people: eventPeople.value.split(",").map((people) => people.trim()),
+			};
 
-	const updateEvent = (id, updatedEvent) => {
-		calendarApp.events.update(id, updatedEvent);
+			const col = await bookingCol();
+
+			const insertId = await col.insertOne(data);
+			console.log(insertId);
+
+			calendarApp.events.add(data);
+		} catch (err) {
+			console.error(err);
+		}
 	};
 </script>
 
@@ -136,7 +136,7 @@
 					</div>
 				</template>
 
-				<form class="px-2 pt-1">
+				<form @submit.prevent="addEventHandler" class="px-2 pt-1">
 					<div class="flex flex-col gap-4">
 						<div class="">
 							<label
@@ -149,24 +149,23 @@
 								type="text"
 								name="title"
 								id="title"
-								class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 placeholder:text-gray-500"
+								class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder:text-gray-500"
 								placeholder="Type a title"
-								required="" />
+								required />
 						</div>
 						<div class="">
 							<label
-								for="location"
+								for="people"
 								class="block mb-1.5 text-sm font-medium text-gray-900"
-								>Location</label
+								>People</label
 							>
 							<input
-								v-model="eventLocation"
+								v-model="eventPeople"
 								type="text"
-								name="location"
-								id="location"
-								class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 placeholder:text-gray-500"
-								placeholder="Type your location"
-								required="" />
+								id="people"
+								class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder:text-gray-500"
+								placeholder="Names (separated by commas if multiple)"
+								required />
 						</div>
 						<div class="flex justify-between max-sm:flex-col">
 							<div class="">
@@ -180,9 +179,9 @@
 									type="datetime-local"
 									name="start"
 									id="start"
-									class="bg-gray-50 border w-full border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block p-2.5"
+									class="bg-gray-50 border w-full border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
 									placeholder="$2999"
-									required="" />
+									required />
 							</div>
 							<div class="">
 								<label
@@ -195,9 +194,9 @@
 									type="datetime-local"
 									name="end"
 									id="end"
-									class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+									class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
 									placeholder="$2999"
-									required="" />
+									required />
 							</div>
 						</div>
 
@@ -212,11 +211,12 @@
 								id="description"
 								rows="4"
 								class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500"
-								placeholder="Write product description here" />
+								placeholder="Write a description"
+								required />
 						</div>
 						<button
 							@click="addEvent"
-							type="button"
+							type="submit"
 							class="text-white inline-flex items-center mt-4 ml-auto bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2 text-center">
 							Submit
 						</button>

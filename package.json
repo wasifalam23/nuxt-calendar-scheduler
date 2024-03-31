@@ -25,6 +25,7 @@
     "@schedule-x/theme-default": "^1.27.0",
     "@schedule-x/vue": "^1.23.0",
     "flowbite": "^2.3.0",
+    "moment": "^2.30.1",
     "realm-web": "^2.0.0"
   }
 }
