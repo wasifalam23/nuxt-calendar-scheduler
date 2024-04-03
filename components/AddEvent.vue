@@ -55,9 +55,7 @@
 				);
 			});
 
-			const slotsToRemove = bookingsData.map((slot) =>
-				toAMPMTime(slot.time_slot_start)
-			);
+			const slotsToRemove = bookingsData.map((slot) => toAMPMTime(slot.start));
 
 			if (slotsToRemove.length === 0) {
 				timeSlots.value = slots;
@@ -67,8 +65,6 @@
 				);
 			}
 
-			console.log(slotsToRemove);
-			console.log(timeSlots.value);
 			fetchAvlSlots.value = false;
 		} catch (err) {
 			console.log(err);
@@ -86,28 +82,31 @@
 		try {
 			const uuid = Realm.BSON.ObjectID();
 
-			// const data = {
-			// 	_id: uuid,
-			// 	id: uuid.toString(),
-			// 	title: eventTitle.value,
-			// 	schedule_date: new Date(eventStart.value),
-			// 	start: toEventDateTime(eventStart.value),
-			// 	end: toEventDateTime(eventEnd.value),
-			// 	description: eventDescription.value,
-			// 	time_slot_start: getOnlyTime(eventStart.value),
-			// 	time_slot_end: getOnlyTime(eventEnd.value),
-			// 	people: eventPeople.value.split(",").map((people) => people.trim()),
-			// };
+			const data = {
+				_id: uuid,
+				id: uuid.toString(),
+				title: eventTitle.value,
+				schedule_date: new Date(scheduleDate.value),
+				start: `${scheduleDate.value} ${toRailwayTime(slot.value.start)}`,
+				end: `${scheduleDate.value} ${toRailwayTime(slot.value.end)}`,
+				description: eventDescription.value,
+				people: eventPeople.value.split(",").map((people) => people.trim()),
+			};
 
-			console.log(slot.value);
+			const col = await bookingCol();
+			const insertId = await col.insertOne(data);
 
-			// const col = await bookingCol();
-			// const insertId = await col.insertOne(data);
+			if (insertId) {
+				emit("addEvent", data);
 
-			// if (insertId) {
-			// 	emit("addEvent", data);
-			// 	modalIsOpen.value = false;
-			// }
+				eventTitle.value = "";
+				scheduleDate.value = "";
+				slot.value = null;
+				eventPeople.value = "";
+				eventDescription.value = "";
+				modalIsOpen.value = false;
+			}
+
 			isSubmitting.value = false;
 		} catch (err) {
 			console.error(err);
