@@ -29,8 +29,8 @@
 			createEventModalPlugin(),
 		],
 		dayBoundaries: {
-			start: "13:00",
-			end: "21:00",
+			start: "00:00",
+			end: "23:59",
 		},
 		events: [],
 		calendars: {
@@ -80,7 +80,7 @@
 
 <template>
 	<div class="h-full overflow-hidden mt-4">
-		<div class="flex items-center gap-3 mb-2">
+		<div class="flex items-center gap-3 mb-3">
 			<button
 				title="Fetch latest events"
 				@click="fetchLatestEvents"
@@ -109,8 +109,8 @@
 
 <style>
 	.sx-vue-calendar-wrapper {
-		height: 700px;
-		max-height: 90vh;
 		width: 100%;
+		height: 100vh;
+		max-height: 90vh;
 	}
 </style>
